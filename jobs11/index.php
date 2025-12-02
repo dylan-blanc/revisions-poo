@@ -339,3 +339,117 @@ class Category
 
 
 
+class Clothing extends Product
+{
+    private string $size;
+    private string $color;
+    private string $type;
+    private int $material_fee;
+
+    public function __construct(
+        ?int $id,
+        string $name,
+        array $photos,
+        int $price,
+        string $description,
+        int $quantity,
+        DateTime $createdAt,
+        DateTime $updatedAt,
+        int $category_id,
+        PDO $pdo,
+        string $size,
+        string $color,
+        string $type,
+        int $material_fee
+    ) {
+        parent::__construct($id, $name, $photos, $price, $description, $quantity, $createdAt, $updatedAt, $category_id, $pdo);
+        $this->size = $size;
+        $this->color = $color;
+        $this->type = $type;
+        $this->material_fee = $material_fee;
+    }
+
+    public function getSize(): string
+    {
+        return $this->size;
+    }
+    public function setSize(string $size): self
+    {
+        $this->size = $size;
+        return $this;
+    }
+    public function getColor(): string
+    {
+        return $this->color;
+    }
+    public function setColor(string $color): self
+    {
+        $this->color = $color;
+        return $this;
+    }
+    public function getType(): string
+    {
+        return $this->type;
+    }
+    public function setType(string $type): self
+    {
+        $this->type = $type;
+        return $this;
+    }
+    public function getMaterialFee(): int
+    {
+        return $this->material_fee;
+    }
+    public function setMaterialFee(int $fee): self
+    {
+        $this->material_fee = $fee;
+        return $this;
+    }
+}
+
+class Electronic extends Product
+{
+    private string $brand;
+    private int $waranty_fee;
+
+    public function __construct(
+        ?int $id,
+        string $name,
+        array $photos,
+        int $price,
+        string $description,
+        int $quantity,
+        DateTime $createdAt,
+        DateTime $updatedAt,
+        int $category_id,
+        PDO $pdo,
+        string $brand,
+        int $waranty_fee
+    ) {
+        parent::__construct($id, $name, $photos, $price, $description, $quantity, $createdAt, $updatedAt, $category_id, $pdo);
+        $this->brand = $brand;
+        $this->waranty_fee = $waranty_fee;
+    }
+
+    // Getters et setters pour les propriétés spécifiques
+    public function getBrand(): string
+    {
+        return $this->brand;
+    }
+    public function setBrand(string $brand): self
+    {
+        $this->brand = $brand;
+        return $this;
+    }
+    public function getWarantyFee(): int
+    {
+        return $this->waranty_fee;
+    }
+    public function setWarantyFee(int $fee): self
+    {
+        $this->waranty_fee = $fee;
+        return $this;
+    }
+}
+
+

@@ -339,8 +339,6 @@ class Category
 
 
 
-
-
 $product = new Product(
     null,
     'T-shirt',
