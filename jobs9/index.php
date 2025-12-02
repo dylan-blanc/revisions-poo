@@ -14,7 +14,7 @@ try {
 
 class Product
 {
-    private int $id = 0;
+    private ?int $id = null;
     private string $name = "";
     private array $photos = [];
     private int $price = 0;
@@ -27,7 +27,7 @@ class Product
 
 
     public function __construct(
-        int $id,
+        ?int $id,
         string $name,
         array $photos,
         int $price,
@@ -51,7 +51,7 @@ class Product
     }
 
     // getters
-    public function getId()
+    public function getId(): ?int
     {
         return $this->id;
     }
@@ -194,6 +194,26 @@ class Product
         }
         return $products;
     }
+
+    public function create(): bool
+    {
+        $stmt = $this->pdo->prepare("INSERT INTO product (name, photos, price, description, quantity, created_at, updated_at, category_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+        $success = $stmt->execute([
+            $this->name,
+            json_encode($this->photos),
+            $this->price,
+            $this->description,
+            $this->quantity,
+            $this->createdAt->format('d-m-y H:i:s'),
+            $this->updatedAt->format('d-m-y H:i:s'),
+            $this->category_id
+        ]);
+        if ($success) {
+            $this->id = (int)$this->pdo->lastInsertId();
+            return true;
+        }
+        return false;
+    }
 }
 
 
@@ -291,20 +311,24 @@ class Category
 }
 
 
-$products = Product::findAll($pdo);
-echo '<h2>Liste des produits</h2>';
-if (empty($products)) {
-    echo 'Aucun produit trouvé.';
+
+
+$product = new Product(
+    null,
+    'T-shirt',
+    ['https://picsum.photos/200/300'],
+    1000,
+    'A beautiful T-shirt',
+    10,
+    new DateTime(),
+    new DateTime(),
+    2, // remplace par l’id de la catégorie souhaitée
+    $pdo
+);
+
+$result = $product->create();
+if ($result) {
+    echo "Succès : Produit créé avec l'ID : " . $product->getId() . "<br>";
 } else {
-    echo '<ul>';
-    foreach ($products as $product) {
-        echo '<li>';
-        echo '<strong>' . htmlspecialchars($product->getName()) . '</strong> - ';
-        echo 'Prix : ' . htmlspecialchars($product->getPrice() / 100) . ' €<br>';
-        echo 'Description : ' . htmlspecialchars($product->getDescription()) . '<br>';
-        echo 'Quantité : ' . htmlspecialchars($product->getQuantity()) . '<br>';
-        echo 'Photos : ' . implode(', ', $product->getPhotos()) . '<br>';
-        echo '</li>';
-    }
-    echo '</ul>';
+    echo "Échec de la création du produit.<br>";
 }
