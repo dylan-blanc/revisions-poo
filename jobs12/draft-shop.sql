@@ -19,6 +19,12 @@ CREATE TABLE `product` (
     `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
     `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     `category_id` INT NOT NULL,
+    `size` VARCHAR(10) DEFAULT NULL,
+    `color` VARCHAR(50) DEFAULT NULL,
+    `type` VARCHAR(50) DEFAULT NULL,
+    `material_fee` INT DEFAULT 0,
+    `brand` VARCHAR(255) DEFAULT NULL,
+    `waranty_fee` INT DEFAULT 0,
     FOREIGN KEY (`category_id`) REFERENCES `category`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 

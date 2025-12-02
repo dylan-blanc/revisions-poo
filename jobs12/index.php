@@ -23,7 +23,7 @@ class Product
     private DateTime $createdAt;
     private DateTime $updatedAt;
     private int $category_id = 0;
-    private PDO $pdo;
+    protected PDO $pdo;
 
 
     public function __construct(
@@ -204,8 +204,8 @@ class Product
 
     public function create(): bool
     {
-        $stmt = $this->pdo->prepare("INSERT INTO product (name, photos, price, description, quantity, created_at, updated_at, category_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-        $success = $stmt->execute([
+        $columns = ["name", "photos", "price", "description", "quantity", "created_at", "updated_at", "category_id"];
+        $values = [
             $this->name,
             json_encode($this->photos),
             $this->price,
@@ -214,7 +214,15 @@ class Product
             $this->createdAt->format('d-m-y H:i:s'),
             $this->updatedAt->format('d-m-y H:i:s'),
             $this->category_id
-        ]);
+        ];
+        if (method_exists($this, 'getExtraColumnsAndValues')) {
+            list($extraColumns, $extraValues) = $this->getExtraColumnsAndValues();
+            $columns = array_merge($columns, $extraColumns);
+            $values = array_merge($values, $extraValues);
+        }
+        $sql = "INSERT INTO product (" . implode(", ", $columns) . ") VALUES (" . rtrim(str_repeat('?, ', count($columns)), ', ') . ")";
+        $stmt = $this->pdo->prepare($sql);
+        $success = $stmt->execute($values);
         if ($success) {
             $this->id = (int)$this->pdo->lastInsertId();
             return true;
@@ -252,7 +260,7 @@ class Category
     private string $description = "";
     private DateTime $createdAt;
     private DateTime $updatedAt;
-    private PDO $pdo;
+    protected PDO $pdo;
 
     public function __construct(
         int $id,
@@ -427,11 +435,12 @@ class Clothing extends Product
         $products = parent::findAll($pdo);
         $clothings = [];
         foreach ($products as $product) {
-
             $stmt = $pdo->prepare("SELECT size, color, type, material_fee FROM product WHERE id = ? AND type = 'clothing'");
             $stmt->execute([$product->getId()]);
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
             if ($row) {
+                // On récupère le PDO de l'objet parent si possible
+                $pdoToUse = method_exists($product, 'getPdo') ? $product->getPdo() : $pdo;
                 $clothings[] = new Clothing(
                     $product->getId(),
                     $product->getName(),
@@ -442,7 +451,7 @@ class Clothing extends Product
                     $product->getCreatedAt(),
                     $product->getUpdatedAt(),
                     $product->getCategory() ? $product->getCategory()->getId() : 0,
-                    $pdo,
+                    $pdoToUse,
                     $row['size'] ?? '',
                     $row['color'] ?? '',
                     $row['type'] ?? '',
@@ -451,6 +460,14 @@ class Clothing extends Product
             }
         }
         return $clothings;
+    }
+
+    protected function getExtraColumnsAndValues(): array
+    {
+        return [
+            ["type", "size", "color", "material_fee"],
+            ["clothing", $this->size, $this->color, $this->material_fee]
+        ];
     }
 
     public function create(): bool
@@ -530,6 +547,7 @@ class Electronic extends Product
             $stmt->execute([$product->getId()]);
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
             if ($row) {
+                $pdoToUse = method_exists($product, 'getPdo') ? $product->getPdo() : $pdo;
                 $electronics[] = new Electronic(
                     $product->getId(),
                     $product->getName(),
@@ -540,13 +558,20 @@ class Electronic extends Product
                     $product->getCreatedAt(),
                     $product->getUpdatedAt(),
                     $product->getCategory() ? $product->getCategory()->getId() : 0,
-                    $pdo,
+                    $pdoToUse,
                     $row['brand'] ?? '',
                     isset($row['waranty_fee']) ? (int)$row['waranty_fee'] : 0
                 );
             }
         }
         return $electronics;
+    }
+    protected function getExtraColumnsAndValues(): array
+    {
+        return [
+            ["type", "brand", "waranty_fee"],
+            ["electronic", $this->brand, $this->waranty_fee]
+        ];
     }
 
     public function create(): bool
@@ -559,3 +584,44 @@ class Electronic extends Product
         return parent::update();
     }
 }
+
+
+
+$clothing = new Clothing(0, 'Sweatshirt', [], 40, 'une description de sweatshirt', 10, new DateTime(), new DateTime(), 2, $pdo, 'XXL', 'Rouge', 'Pull', 100);
+$clothingResult = $clothing->create();
+if ($clothingResult) {
+    echo "Clothing créé avec l'id : ", $clothing->getId(), "\n";
+} else {
+    echo "Erreur lors de la création du Clothing\n";
+}
+$clothingResult = $clothing->findOneById($clothing->getId());
+if ($clothingResult) {
+    echo "Clothing trouvé : ", $clothing->getName(), "\n";
+} else {
+    echo "Aucun Clothing trouvé pour l'id ", $clothing->getId(), "\n";
+}
+
+echo "<br>";
+$clothings = Clothing::findAll($pdo);
+echo "Nombre de Clothing trouvés : ", count($clothings), "\n";
+echo "<br>";
+
+$electronic = new Electronic(0, 'PommeDeTerreConnecté', [], 2, 'Patate Intelligente', 100000, new DateTime(), new DateTime(), 1, $pdo, 'LaPomme', 222);
+$electronicResult = $electronic->create();
+if ($electronicResult) {
+    echo "Electronic créé avec l'id : ", $electronic->getId(), "\n";
+} else {
+    echo "Erreur lors de la création du Clothing\n";
+}
+$electronicResult = $electronic->findOneById($electronic->getId());
+if ($electronicResult) {
+    echo "Electronic trouvé : ", $electronic->getName(), "\n";
+} else {
+    echo "Aucun Electronic trouvé pour l'id ", $electronic->getId(), "\n";
+}
+echo "<br>";
+
+
+$electronics = Electronic::findAll($pdo);
+echo "Nombre d'Electronic trouvés : ", count($electronics), "\n";
+echo "<br>";
